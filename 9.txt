@@ -1,0 +1,56 @@
+﻿1. Вывести всех сотрудников, их год трудоустройства в компанию, департамент и среднюю зарплату всех работающих в данном департаменте сотрудников. 
+
+select first_name, last_name, extract(year from hire_date) hire_year,
+       department_id,
+       round(avg(salary) over( PARTITION BY department_id ), 2) avg_dep_salary
+from employees;
+
+2. Найти департаменты, в которых средняя зарплата от года к году только падает.
+
+with ex as (
+    select department_id, year, av,
+           lead(av) over(partition by department_id order by year) lead_av
+    from (
+        select department_id, year, avg(avg) av
+        from (
+            select first_name, department_id, extract(year from hire_date) year,
+                   avg(salary) over(PARTITION BY department_id, extract(year from hire_date)) avg
+            from employees
+        )
+        group by department_id, year
+    )
+)
+select DISTINCT department_id
+from ex
+where lead_av < av and department_id not in (
+                        select department_id from ex
+                        where  av = lead_av); 
+
+3.  Дана таблица:
++----+------------+-------------+
+| id | recordDate | Temperature |
++----+------------+-------------+
+| 1  | 2021-03-01 | 10          |
+| 2  | 2021-03-02 | 25          |
+| 3  | 2021-03-03 | 20          |
+| 4  | 2021-03-04 | 30          |
++----+------------+-------------+
+Вывести ID дат с более высокой температурой по сравнению с предыдущей датой.
+Например, для приведенной таблицы должны вернуться следующие строки: 
++----+
+| id |
++----+
+| 2  |
+| 4  |
++----+
+with ex as ( -- предположим, что department_id это типа температура
+    select ROWNUM id, job.department_id Temperature from job_history job
+    where ROWNUM < 9
+)
+select id from (
+    select id, lag_temp from (
+        select id, temperature, lag(temperature) over ( ORDER BY id) lag_temp
+        from ex
+    )
+    where lag_temp < temperature
+);

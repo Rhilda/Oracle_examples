@@ -1,0 +1,59 @@
+1. ѕолучить всех сотрудников из 50 отдела с зарплатой, большей 4000.
+
+select * from employees
+where department_id=50 and salary>4000
+
+2. ѕолучить список всех сотрудников у которых последн€€ буква в имени равна 'a'.
+
+select * from employees
+where first_name like '%a'
+
+3. ѕолучить список всех сотрудников из 50го и из 80го отдела, у которых есть бонус.
+
+select * from employees
+where department_id in (50, 80) and commission_pct is not null
+
+4. ѕолучить список всех сотрудников, у которых в имени содержатс€ минимум 2 буквы 'n'.
+
+select * from employees
+where first_name like '%N%n%' --% перед N на случай наличи€ пробельных символов перед именем
+   or first_name like '%n%n%'
+
+5. ѕолучить отчет по департаментам с минимальной и максимальной зарплатой, с ранней и поздней датой прихода на работу и с количествов сотрудников. —орировать по убыванию количества сотрудников.
+
+select department_id, min(salary), max(salary), min(hire_date), max(hire_date), count(*) c
+from employees
+GROUP by department_id
+ORDER by c DESC
+
+6. —колько сотрудников работают в одном и тоже отделе и получают одинаковую зарплату?
+
+select department_id, salary, count(*) from employees
+GROUP by department_id, salary
+
+7. ѕолучить максимальную зарплату всех сотрудников, job_id которых заканчиваетс€ на слово 'CLERK'.
+
+select max(salary) from employees
+WHERE job_id like '%CLERK'
+
+8. ѕолучить список manager_id, у которых количество подчиненных больше 5 и сумма всех зарплат его подчиненных больше 50000.
+
+select manager_id from employees
+GROUP by manager_id
+HAVING sum(salary) > 50000
+   and count(*) > 5
+
+9. ѕолучить список manager_id, у которых средн€€ зарплата всех его подчиненных находитс€ в промежутке от 6000 до 9000 и которые не получают бонусы.
+
+select manager_id from employees
+where commission_pct is null
+GROUP by manager_id
+HAVING avg(salary) BETWEEN 6000 and 9000
+
+10. ѕолучить список департаментов, в которых работают сотрудники нескольких job_id (т.е. количество уникальных job_id>1)
+
+select department_id from employees
+GROUP by department_id
+HAVING count(DISTINCT job_id) > 1
+
+

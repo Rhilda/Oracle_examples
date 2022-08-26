@@ -1,0 +1,105 @@
+----- 1. Сколько сотрудников имена которых начинается с одной и той же буквы? 
+	Сортировать по количеству.
+
+SELECT SUBSTR (first_name, 1, 1) first_char, COUNT (*)
+    FROM employees
+GROUP BY SUBSTR (first_name, 1, 1)
+  HAVING COUNT (*) > 1
+ORDER BY 2 DESC;
+
+----- 2.Получить количество сотрудников с одинаковым количеством букв в имени. 
+	При этом показать только тех у кого длина имени больше 5 и количество сотрудников с таким именем больше 20.
+	Сортировать по длинне имени.
+
+SELECT LENGTH (first_name), COUNT (*)
+    FROM employees
+GROUP BY LENGTH (first_name)
+  HAVING LENGTH (first_name) > 5 AND COUNT (*) > 20
+ORDER BY LENGTH (first_name);
+
+----- 3.Получить список сотрудников с самым длинным именем (first_name).
+
+SELECT *
+  FROM employees
+ WHERE LENGTH (first_name) =
+       (SELECT MAX (LENGTH (first_name)) FROM employees);
+	
+---- 4. Получить список сотрудников с зарплатой большей средней зарплаты всех сотрудников.
+
+SELECT *
+  FROM employees
+ WHERE salary > (SELECT AVG (salary) FROM employees);
+
+---- 5. Получить список сотрудников у которых менеджер получает зарплату больше 15000.
+
+SELECT *
+  FROM employees
+ WHERE manager_id IN (SELECT employee_id
+                        FROM employees
+                       WHERE salary > 15000)
+
+---- 6. Показать всех сотрудников которые не являются менеджерами
+
+SELECT *
+  FROM employees
+ WHERE employee_id NOT IN (SELECT manager_id
+                             FROM employees
+                            WHERE manager_id IS NOT NULL)
+
+----7. Выбрать сотрудников с минимальным окладом в своем отделе.
+
+SELECT employee_id, last_name, salary, department_id 
+FROM employees e
+WHERE (salary, department_id) IN 
+   (SELECT MIN(salary), department_id
+    FROM employees 
+    GROUP BY department_id)
+ORDER BY department_id, salary, last_name;
+
+---- 8. Одной командой SELECT выбрать сумму окладов сотрудников по подразделениям компании и процент, 
+	который эта сумма составляет от суммы окладов всех сотрудников компании. 
+	Если в подразделении нет сотрудников, то считать, что сумма их окладов равна нулю. 
+	В отчете отдельной строкой учесть сведения о сотрудниках, которые не приписаны ни к какому подразделению компании.
+
+SELECT name, sm, ROUND(sm/(sum(sm) OVER ())*100)
+FROM (SELECT SUM(emp.salary) AS sm,  cast(emp.department_id as varchar2(50)) AS name
+      FROM employees emp
+      GROUP BY (emp.department_id)
+      UNION
+      SELECT 0, department_name
+      FROM departments
+      WHERE department_id NOT IN
+         (SELECT department_id FROM employees
+          WHERE department_id IS NOT NULL)
+          )
+      ORDER BY name NULLS FIRST, sm;
+
+----9. Из диапазона натуральных чисел от 1 до 3999 выбрать такие числа, которые, при представлении (строкой) в римском формате, 
+	содержат по 5 уникальных символов, при условии, что 3 из этих символов содержатся (в каждой строке) не менее чем по 3 раза.
+В результат включить сумму всех выбранных чисел, предварённую строкой 'SUM:'
+
+select nvl(x.rn, 'SUM:') r , sum(n) v
+   from
+         (select trim(to_char(rownum, 'RN')) as rn,
+                rownum n from all_objects
+         where rownum < 4000) x
+   where
+         nvl(length(substr(regexp_replace(x.rn, '[^I]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^V]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^X]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^L]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^C]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^D]', ''),0,1)),0)+
+         nvl(length(substr(regexp_replace(x.rn, '[^M]', ''),0,1)),0)
+         =5
+   and
+         decode(length(substr(regexp_replace(x.rn, '[^I]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^V]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^X]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^L]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^D]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^M]', ''),0,3)),3,1,0)+
+         decode(length(substr(regexp_replace(x.rn, '[^C]', ''),0,3)),3,1,0)
+         =3
+   GROUP BY grouping sets ((RN, N), ())
+  ORDER BY N;

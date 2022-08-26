@@ -1,0 +1,81 @@
+﻿CREATE TABLE Phonebook
+    (
+     ID             NUMBER   (6)       NOT NULL, 
+     FIRST_NAME     VARCHAR2 (20 BYTE)     NULL, -- имя
+     LAST_NAME      VARCHAR2 (25 BYTE)     NULL, -- фамилия
+     MIDDLE_NAME    VARCHAR2 (50 BYTE)     NULL, -- отчество
+     FULL_NAME      varchar  (100 BYTE)    NULL, -- фамилия, имя и отчество
+     EMAIL          VARCHAR2 (50 BYTE)     NULL, -- емайл
+     PHONE_NUMBER   VARCHAR2 (20 BYTE)     NULL, -- телефон
+     BIRTHDATE      DATE      			   NULL, -- Дата рождения
+	 TAXID          NUMBER(12)             NULL, -- ИНН
+     SALARY         NUMBER(12)             NULL -- ЗП
+    ) NOLOGGING
+;
+
+0. Заполнить таблицу Phonebook данными на ваше усмотрение. Минимум: 2 записи.
+
+INSERT INTO phonebook(id, FIRST_NAME, LAST_NAME, MIDDLE_NAME, full_name, email, phone_number, birthdate, taxid, salary)
+VALUES ( 1, 'Ivan', 'Ivanov', 'Ivanovich', 'Ivan Ivanov Ivanovich', 'iv@mail.ru', '123', to_date('06.02.2000'), 22, 3000 );
+INSERT INTO phonebook(id, FIRST_NAME, LAST_NAME, MIDDLE_NAME, full_name, email, phone_number, birthdate, taxid, salary)
+VALUES ( 2, 'Ian', 'Ianov', 'Ianovich', 'Ian Ianov Ianovich', 'ian@mail.ru', '111', to_date('11.11.2001'), 34, 4500 );
+
+I. Написать pl/sql-код для  создания view (не материализованное), которое бы возвращало Фамилия, имя, отчество и ЗП сотрудников, у которых заработная плата от 1000 по 3000 (включительно).
+	Имя view определяется так: V_(название основной таблицы или для чего это view)
+
+create VIEW V_FioWhereSalaryBetween1000and3000 as
+select FIRST_NAME, LAST_NAME, MIDDLE_NAME, salary
+from phonebook where salary between 1000 and 3000;
+
+II. Написать pl/sql-код по созданию триггера:
+	Имя триггера определяется так:
+	TR_(название таблицы)_(аббревиатура before - B, after - A)_(аббревиатура Insert - I, update - U, Delte - D)_(наименование столбца, если есть)
+	Например, TR_PhoneBook_A_I_BIRTHDATE, TR_PhoneBook_B_U
+
+Триггеры - базовые:
+1) Создать триггер, который бы заполнял FULL_NAME из поля имя, фамилия и отчество, если не передано FULL_NAME.
+
+create or REPLACE TRIGGER TR_PhoneBook_A_I
+after INSERT on phonebook
+begin
+    UPDATE phonebook
+    SET FULL_NAME = first_name || ' ' || last_name || ' ' || middle_name
+    where FULL_NAME is NULL;
+end;
+
+2) Создать триггер, который бы выдавал ошибку - "TAXID не может быть пустым", если TAXID не передали.
+
+create or REPLACE TRIGGER TR_PhoneBook_B_I_TAXID
+before INSERT on phonebook
+for each row
+begin
+if (:new.TAXID is null) then
+  raise_application_error( -20111, 'TAXID не может быть пустым');
+end if;
+end;
+
+Триггер - продвинутый:
+3) Создать триггер и для него таблицу, в которую бы логировалась запись, о том что: 
+3.1) Человеку нет 18 лет.
+3.2) Человеку более 120 лет.
+3.3) Человек еще не родился.
+
+CREATE TABLE invalid_birthdate (
+ id_client NUMBER(6) not null,
+ date_validation date not null,
+ birthdate date not null,
+ raw_text VARCHAR2(256) not null
+);
+
+create or REPLACE TRIGGER TR_PhoneBook_A_I_BIRTHDATE
+after INSERT on phonebook
+for each row
+begin
+if (MONTHS_BETWEEN(current_date, :new.BIRTHDATE) < 0) then
+  insert into invalid_birthdate values(:new.id, current_date, :new.BIRTHDATE, 'Человек еще не родился');
+elsif (MONTHS_BETWEEN(current_date, :new.BIRTHDATE) < 216) then
+  insert into invalid_birthdate values(:new.id, current_date, :new.BIRTHDATE, 'Человеку нет 18 лет');
+elsif (MONTHS_BETWEEN(current_date, :new.BIRTHDATE) > 1440) then
+  insert into invalid_birthdate values(:new.id, current_date, :new.BIRTHDATE, 'Человеку более 120 лет');
+end if;
+end;

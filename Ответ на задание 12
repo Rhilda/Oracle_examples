@@ -1,0 +1,151 @@
+﻿I. Написать pl/sql-код по созданию процедуры, которая принимает sql-код в формате текста, а внутри данной процедуры вызывается присланный текст.
+Используем Native dynamic SQL 
+
+CREATE OR REPLACE PROCEDURE NATIVE(sqll VARCHAR2)
+IS
+BEGIN
+    EXECUTE IMMEDIATE sqll;
+END;
+
+II. Отформатировать запрос, то есть повысить читабельность запроса.
+
+SELECT b.OLD_SIMPLE_VAL, b.NEW_SIMPLE_VAL,  b.WHO,  DATEADD(hour, 3, b.TIME) as qwe,  t.number, t.openTime, t.assigned_from, t.assigned_to, t.assignment_time, t.WORK_LABOR, t.who_changed,
+ t.callback_contact, DATEDIFF(MI,t.openTime,t.assignment_time)AS OPEN_assignment_MINUTE,
+ DATEDIFF(MI, DATEADD(hour, 3, b.TIME), t.assignment_time) as PM2 FROM reports.dbo.ATM_Inc_Reass t inner join SM9.dbo.HPCAUDITPROBSUMMARYM1 b on t.number=b.id
+where T.closeTime IS not NULL   AND (t.openTime>='2019-07-29 00:00:00' AND t.openTime<='2019-08-05 10:00:00')   and t.callback_contact <> '(99491)'
+   and DATEDIFF(MI,t.openTime,t.assignment_time)<>0
+   and ((((OLD_SIMPLE_VAL='В работе' and NEW_SIMPLE_VAL='Ожидание') OR (OLD_SIMPLE_VAL='Открыт' and NEW_SIMPLE_VAL='Ожидание')) 
+   and t.assignment_time>DATEADD(hour, 3, b.TIME)))
+   or (T.closeTime IS not NULL   AND (t.openTime>='2019-07-29 00:00:00' AND t.openTime<='2019-08-05 10:00:00')
+   and t.callback_contact <> '(99491)'
+   and DATEDIFF(MI,t.openTime,t.assignment_time)<>0   and DATEDIFF(MI, DATEADD(hour, 3, b.TIME), t.assignment_time) is not null
+   and OLD_SIMPLE_VAL='EKB_SUPPORT'
+   and NEW_SIMPLE_VAL IS not NULL    and not EXISTS (SELECT b.OLD_SIMPLE_VAL,
+         b.NEW_SIMPLE_VAL,         b.WHO,         DATEADD(hour, 3, b.TIME) as qwe,         t.number,         t.openTime,
+         t.assigned_from,         t.assigned_to,         t.assignment_time,
+         t.WORK_LABOR,         t.who_changed,
+         t.callback_contact,         DATEDIFF(MI,t.openTime,t.assignment_time)AS OPEN_assignment_MINUTE,
+         DATEDIFF(MI, DATEADD(hour, 3, b.TIME), t.assignment_time) as PM2
+       FROM        reports.dbo.ATM_Inc_Reass t inner join SM9.dbo.HPCAUDITPROBSUMMARYM1 b on t.number=b.id
+       where T.closeTime IS not NULL            AND (t.openTime>='2019-07-29 00:00:00' AND t.openTime<='2019-08-05 10:00:00')            and t.callback_contact <> '(99491)'
+            and DATEDIFF(MI,t.openTime,t.assignment_time)<>0            and ((((OLD_SIMPLE_VAL='В работе' and NEW_SIMPLE_VAL='Ожидание') OR (OLD_SIMPLE_VAL='Открыт' and NEW_SIMPLE_VAL='Ожидание')) 
+            and t.assignment_time>DATEADD(hour, 3, b.TIME)))))
+
+SELECT 
+  b.OLD_SIMPLE_VAL, 
+  b.NEW_SIMPLE_VAL, 
+  b.WHO, 
+  DATEADD(hour, 3, b.TIME) AS qwe, 
+  t.number, 
+  t.openTime, 
+  t.assigned_from, 
+  t.assigned_to, 
+  t.assignment_time, 
+  t.WORK_LABOR, 
+  t.who_changed, 
+  t.callback_contact, 
+  DATEDIFF(
+    MI, t.openTime, t.assignment_time
+  ) AS OPEN_assignment_MINUTE, 
+  DATEDIFF(
+    MI, 
+    DATEADD(hour, 3, b.TIME), 
+    t.assignment_time
+  ) AS PM2 
+FROM 
+  reports.dbo.ATM_Inc_Reass t 
+  INNER JOIN SM9.dbo.HPCAUDITPROBSUMMARYM1 b ON t.number = b.id 
+WHERE
+  T.closeTime IS not NULL 
+  AND (
+    t.openTime >= '2019-07-29 00:00:00' 
+    AND t.openTime <= '2019-08-05 10:00:00'
+  ) 
+  AND t.callback_contact <> '(99491)' 
+  AND DATEDIFF(
+    MI, t.openTime, t.assignment_time
+  )<> 0 
+  AND (
+    (
+      (
+        (
+          OLD_SIMPLE_VAL = 'В работе' 
+          and NEW_SIMPLE_VAL = 'Ожидание'
+        ) 
+        OR (
+          OLD_SIMPLE_VAL = 'Открыт' 
+          AND NEW_SIMPLE_VAL = 'Ожидание'
+        )
+      ) 
+      AND t.assignment_time > DATEADD(hour, 3, b.TIME)
+    )
+  ) 
+  OR (
+    T.closeTime IS not NULL 
+    AND (
+      t.openTime >= '2019-07-29 00:00:00' 
+      AND t.openTime <= '2019-08-05 10:00:00'
+    ) 
+    AND t.callback_contact <> '(99491)' 
+    AND DATEDIFF(
+      MI, t.openTime, t.assignment_time
+    )<> 0 
+    AND DATEDIFF(
+      MI, 
+      DATEADD(hour, 3, b.TIME), 
+      t.assignment_time
+    ) IS not NULL 
+    AND OLD_SIMPLE_VAL = 'EKB_SUPPORT' 
+    AND NEW_SIMPLE_VAL IS not NULL 
+    AND not EXISTS (
+      SELECT 
+        b.OLD_SIMPLE_VAL, 
+        b.NEW_SIMPLE_VAL, 
+        b.WHO, 
+        DATEADD(hour, 3, b.TIME) AS qwe, 
+        t.number, 
+        t.openTime, 
+        t.assigned_from, 
+        t.assigned_to, 
+        t.assignment_time, 
+        t.WORK_LABOR, 
+        t.who_changed, 
+        t.callback_contact, 
+        DATEDIFF(
+          MI, t.openTime, t.assignment_time
+        ) AS OPEN_assignment_MINUTE, 
+        DATEDIFF(
+          MI, 
+          DATEADD(hour, 3, b.TIME), 
+          t.assignment_time
+        ) AS PM2 
+      FROM 
+        reports.dbo.ATM_Inc_Reass t 
+        INNER JOIN SM9.dbo.HPCAUDITPROBSUMMARYM1 b ON t.number = b.id 
+      WHERE
+        T.closeTime IS not NULL 
+        AND (
+          t.openTime >= '2019-07-29 00:00:00' 
+          AND t.openTime <= '2019-08-05 10:00:00'
+        ) 
+        AND t.callback_contact <> '(99491)' 
+        AND DATEDIFF(
+          MI, t.openTime, t.assignment_time
+        )<> 0 
+        AND (
+          (
+            (
+              (
+                OLD_SIMPLE_VAL = 'В работе' 
+                AND NEW_SIMPLE_VAL = 'Ожидание'
+              ) 
+              OR (
+                OLD_SIMPLE_VAL = 'Открыт' 
+                AND NEW_SIMPLE_VAL = 'Ожидание'
+              )
+            ) 
+            AND t.assignment_time > DATEADD(hour, 3, b.TIME)
+          )
+        )
+    )
+  )

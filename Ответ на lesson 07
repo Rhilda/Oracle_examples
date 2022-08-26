@@ -1,0 +1,58 @@
+﻿5) Выполнить в своей схеме (базе данных) скрипт:
+
+create table countriess (
+country_id number,
+name varchar(100),
+code varchar(100),
+population number
+);
+comment on table countriess is 'Страны';
+comment on column countriess.country_id is 'ID страны';
+comment on column countriess.name is 'Наименование страны';
+comment on column countriess.code is '3х буквенный код страны';
+comment on column countriess.population is 'Население страны';
+
+
+
+6) написать скрипт вставки в таблицу 5 строк, какие данные вставить, придумать самим.
+
+INSERT INTO countriess(country_id, name, code, population) VALUES ( 1, 'UK', '22', 2000000 );
+INSERT INTO countriess(country_id, name, code, population) VALUES ( 2, 'US', '2', 200000000 );
+INSERT INTO countriess(country_id, name, code, population) VALUES ( 3, 'Russia', '1', 120000000 );
+INSERT INTO countriess(country_id, name, code, population) VALUES ( 4, 'China', '6', 1000000000 );
+INSERT INTO countriess(country_id, name, code, population) VALUES ( 5, 'Japan', '36', 40000000 );
+
+7) написать скрипт удаление 2 записей, какие данные удалить, придумать самим.
+
+DELETE FROM countriess
+WHERE country_id < 3;
+
+8) написать скрипт обновление 1 записи, какие данные обновить, придумать самим.
+
+UPDATE countriess
+SET population = 0
+WHERE country_id = 4;
+
+8) Написать любой цикл на основе таблицы, придумать самим.
+ DECLARE 
+ cursor c1 is
+ SELECT country_id FROM countriess;
+
+BEGIN
+  FOR c IN c1
+  LOOP
+    dbms_output.put_line( 'c.country_id' );
+  END LOOP;
+END;
+
+9) Написать любой курсор на основе таблицы, придумать самим.
+ DECLARE 
+ cursor c1 is
+ SELECT country_id FROM countriess;
+
+BEGIN
+  FOR c IN c1
+  LOOP
+    dbms_output.put_line( 'c.country_id' );
+  END LOOP;
+END;

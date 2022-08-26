@@ -1,0 +1,70 @@
+1. Получить город, в котором сотрудники в сумме зарабатывают меньше всех.
+SELECT city
+    FROM employees e
+         JOIN departments d ON (e.department_id = d.department_id)
+         JOIN locations l ON (d.location_id = l.location_id)
+GROUP BY city
+  HAVING SUM (salary) =
+         (  SELECT MIN (SUM (salary))
+              FROM employees e
+                   JOIN departments d ON (e.department_id = d.department_id)
+                   JOIN locations l ON (d.location_id = l.location_id)
+          GROUP BY city);
+
+2. Получить список сотрудников менеджеры которых устроились на работу в 1999
+но при это сами эти работники устроились на работу до 1999
+
+SELECT emp.*
+  FROM employees emp JOIN employees man ON (emp.manager_id = man.employee_id)
+ WHERE     TO_CHAR (man.hire_date, 'YYYY') = '1999'
+       AND emp.hire_date < TO_DATE ('01011999', 'DDMMYYYY');
+
+3. Дана таблица:
++----+------------+-------------+
+| id | recordDate | Temperature |
++----+------------+-------------+
+| 1  | 2021-03-01 | 10          |
+| 2  | 2021-03-02 | 25          |
+| 3  | 2021-03-03 | 20          |
+| 4  | 2021-03-04 | 30          |
++----+------------+-------------+
+Вывести ID дат с более высокой температурой по сравнению с предыдущими датами.
+Например, для приведенной таблицы должны вернуться следующие строки: 
++----+
+| id |
++----+
+| 2  |
+| 4  |
++----+
+
+
+select w1.id FROM weather w1 
+cross join weather w2 where w1.recordDate- w2.recordDate=1
+and w1.Temperature > w2.Temperature
+
+
+4. Имеется таблица, содержащая два столбца: X и Y. Две пары (X 1 , Y 1) и (X 2 , Y 2) называются симметричными парами, если X 1 = Y 2 и X 2 = Y 1.
+Напишите запрос для вывода всех таких симметричных пар в порядке возрастания величины X.
+
+Пример: 
+Sample Input 
+X	Y
+20	20
+20	20
+20	21
+23	22
+22	23
+21	20
+
+Sample Output 
+20 20
+20 21
+22 23
+
+select f1.X, f1.Y  from 
+SampleInput f1
+inner join 
+SampleInput f2 on f1.x=f2.y and f1.y=f2.x
+group by f1.X, f1.Y
+having COUNT(f1.X)>1 or f1.X>f1.Y
+ORDER BY f1.X

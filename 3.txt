@@ -1,0 +1,124 @@
+1. Сколько сотрудников, имена которых начинается с одной и той же буквы? 
+   Вывести первую букву имени и количество сотрудников. Сортировать по количеству по убыванию.
+
+select substr(first_name, 1, 1) s, count(*) c
+from employees
+GROUP by (substr(first_name, 1, 1))
+ORDER by c DESC
+
+2. Вывести названия отделов (department_name), в которых работают более 20 сотрудников, у которых длина имени более 5 символов.
+
+select department_name from departments
+where department_id in (
+    select department_id
+    from employees
+    WHERE length(first_name) > 5
+    GROUP by (department_id)
+    HAVING count(first_name) > 20
+    )
+
+3. Получить список сотрудников с самым длинным именем (first_name).
+
+select first_name from employees
+WHERE length(first_name) = ( select max(length(first_name)) from employees )
+	
+4. Получить список сотрудников с зарплатой, большей средней зарплаты всех сотрудников.
+
+select first_name, last_name from employees
+WHERE salary > ( select avg(salary) from employees )
+
+5. Получить список сотрудников, у которых менеджер получает зарплату больше 15000.
+
+select first_name, last_name from employees
+WHERE manager_id in ( 
+    select employee_id from employees
+    where employee_id in (select manager_id from employees)
+    	and salary > 15000)
+
+6. Показать всех сотрудников, которые не являются менеджерами.
+
+select first_name, last_name from employees
+WHERE employee_id not in ( 
+    select employee_id from employees
+    where employee_id in (select manager_id from employees))
+
+7. Выбрать сотрудников с минимальным окладом в своем отделе.
+
+select first_name, last_name from employees
+WHERE (department_id, salary) in ( 
+    select department_id, min(salary) from employees
+    GROUP by department_id
+    )
+
+8. Выбрать сумму окладов сотрудников по подразделениям компании и процент, 
+	который эта сумма составляет от суммы окладов всех сотрудников компании. 
+	Если в подразделении нет сотрудников, то считать, что сумма их окладов равна нулю. 
+	В отчете отдельной строкой учесть сведения о сотрудниках, которые не приписаны ни к какому подразделению компании.
+
+В результат вывести:
+- название департмента компании,
+- сумму окладов сотрудников каждого департмента,
+- процент, который составляет сумма окладов сотрудников каждого департамента от суммы окладов всех сотрудников компании (с точностью до целых процентов).
+
+Результат отсортировать по возрастанию по полям:
+- название департамента компании (неизвестные названия вывести первыми),
+- сумма окладов сотрудников.
+
+select department_name, dn.sum, dn.pct from (
+    select department_id, sum, cast(pct as NUMBER(3, 0)) pct from (
+        select department_id, 0 sum, 0 pct from departments
+        where department_id not in (
+            select department_id from employees
+            where department_id is NOT NULL
+            )
+        union
+        select department_id, sum(salary),
+               sum(salary) * 100/(select sum(salary) from employees)
+        from employees
+        GROUP by department_id
+    ) 
+) dn
+left join departments
+on dn.department_id = departments.department_id
+order by department_name NULLS FIRST, sum;
+
+9. Из диапазона натуральных чисел от 1 до 3999 выбрать такие числа, которые, при представлении (строкой) в римском формате, 
+	содержат по 5 уникальных символов, при условии, что 3 из этих символов содержатся (в каждой строке) не менее чем по 3 раза.
+В результат также включить сумму всех выбранных чисел ('SUM:').
+
+create or replace function roman_to_decimal(p_roman varchar2)
+return number deterministic is
+  l_decimal number := 0;
+begin
+  for i in 1..regexp_count(p_roman, '(CM|M|CD|D|XC|C|XL|L|IX|X|IV|V|I)') loop
+    l_decimal := l_decimal +
+      case regexp_substr(p_roman, '(CM|M|CD|D|XC|C|XL|L|IX|X|IV|V|I)', 1, i)
+        when 'M'  then 1000
+        when 'CM' then 900
+        when 'D'  then 500
+        when 'CD' then 400
+        when 'C'  then 100
+        when 'XC' then 90
+        when 'L'  then 50
+        when 'XL' then 40
+        when 'X'  then 10
+        when 'IX' then 9
+        when 'V'  then 5
+        when 'IV' then 4
+        when 'I'  then 1
+      end;
+  end loop;
+
+  return l_decimal;
+end;
+/
+select sum(roman_to_decimal(rom)) from (
+    select rom from (
+        select replace(TO_CHAR(r,'RN'), ' ', '') rom from (
+            (SELECT ROWNUM r FROM DUAL CONNECT BY LEVEL <=3999)
+            )
+    ))
+where length(rom) > 10 and (
+      rom like '%M%M%M%C%C%C%I%I%I' or
+      rom like '%M%M%M%X%X%X%I%I%I' or
+      rom like '%C%C%C%X%X%X%I%I%I');
